@@ -10,6 +10,7 @@
 //! * [matrix-rank](https://stattrek.com/matrix-algebra/matrix-rank.aspx)
 //! 
 
+use crate::types::*;
 
 /// Evaluate x**3 + x + 5
 ///
@@ -39,32 +40,36 @@ fn qeval(x: u32) -> u32 {
 /// # return value
 ///
 /// * The flattened equation
-fn flattening(equation: std::vec::Vec<(u32, u32)>) -> Result<std::vec::Vec<std::vec::Vec<(u32, u32)>>, std::string::String> {
-    let mut flattened: std::vec::Vec<std::vec::Vec<(u32, u32)>> = vec![vec![]];
+// TODO: we don't support minus or division yet
+fn flatten(equation: std::vec::Vec<(u32, u32)>) -> Result<Flattened_equation, std::string::String> {
+    // let mut flattened: std::vec::Vec<std::vec::Vec<(u32, u32)>> = vec![vec![]];
+    let mut flattened: Flattened_equation;
     for &element in equation.iter() { // TODO why are we using a reference here?
-        let mut addend: std::vec::Vec<(u32, u32)> = vec![];
         // negative multiplicands or powers are not allowed
         if element.0 < 1 || element.1 < 0 {
             // std::string::String::from("Error Happens!") // TODO how to return an error
             ()
         }
-        
+
         // add entry for multiplicand bigger than 1
         if element.0 != 1 {
-            addend.push((element.0, 1));
+            flattened.operands.push((element.0, 0));
+            flattened.operators.push(flattening_operators::multiply);
         }
         
         // add entry for exponent of 1 or 0
         if element.1 == 0 || element.1 == 1 {
-            addend.push(element.0, element.1);
+            flattened.operands.push((element.0, 1));
         
         // add entry for exponent bigger than 1
         } else {
-            for number in (1..element.1). {
-                addend.push((element.0, 1));
+            flattened.operands.push((element.0, 1));
+            for _i in 1..(element.1 - 1) {
+                flattened.operands.push((element.0, 1));
+                flattened.operators.push(flattening_operators::multiply);
             }
         }
-        flattened.push(addend);
+        flattened.operators.push(flattening_operators::plus);
     }
     Ok(flattened)
 }
@@ -88,7 +93,7 @@ fn flattening(equation: std::vec::Vec<(u32, u32)>) -> Result<std::vec::Vec<std::
 // TODO: params could be encapsulated in a flattened equation class
 // TODO: that class should have some operand which automagically choses (based on stored variable)
 // whether to add or multiply
-fn gates_to_r1cs(flattened_equation: std::vec::Vec<(u32, u32)>, params: u32) -> Result<std::vec::Vec<u32>, std::string::String>) {
+fn gates_to_r1cs(flattened_equation: std::vec::Vec<(u32, u32)>, params: u32) -> Result<std::vec::Vec<u32>, std::string::String> {
     let triples = vec![vec![0; params - 1]];
     
     let outgoing_var_index = 3; // the first three indexes are already set // TODO: improve this explanation
@@ -158,7 +163,7 @@ fn main() {
     let equations: std::vec::Vec<std::vec::Vec<(u32, u32)>> = vec![vec![(1,3),(1,1),(5,0)]];
     let mut flattened = Vec::new();
     for equation in equations.iter() {
-        let r = flattening(equation.to_vec());
+        let r = flatten(equation.to_vec());
         match r.clone() { // TODO is there another way to do this without cloning?
             Ok(value) => {
                     for element in value.iter() {
