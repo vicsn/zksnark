@@ -69,7 +69,7 @@ fn flatten(equation: std::vec::Vec<(u32, u32)>) -> Result<FlattenedEquation, std
         // add entry for exponent bigger than 1
         } else {
             flattened.add_operand((element.0, 1));
-            for _i in 1..(element.1 - 1) {
+            for _i in 0..(element.1 - 1) {
                 flattened.add_operand((element.0, 1));
                 flattened.add_operator(FlatteningOperator::Multiply);
             }
