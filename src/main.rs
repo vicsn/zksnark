@@ -74,13 +74,9 @@ fn flatten(equation: std::vec::Vec<(u32, u32)>) -> Result<FlattenedEquation, std
 
         // NOTE: skip ahead for multiplicand of 1 and exponent of 1
         
-        // TODO: maybe make use of this: we'll always add: (vars[0] or vars[1]) and (vars[i]) and (vars[i+1])
-        // add entry for multiplicand bigger than 1, without x
-        if element.0 != 1 && element.1 == 0 {
-            flattened.add_operand((element.0, 0));
-            
+        // TODO: simplifying constraint: we're always adding: (vars[0] or vars[1]) and (vars[i]) and (vars[i+1])
         // add entry for multiplicant bigger than 1, with x
-        } else if element.0 != 1 && element.1 > 0{
+        if element.0 != 1 && element.1 > 0{
             flattened.add_operand((element.0, 0));
             flattened.add_operator(FlatteningOperator::Multiply);
             
@@ -115,6 +111,7 @@ fn flatten(equation: std::vec::Vec<(u32, u32)>) -> Result<FlattenedEquation, std
         }
         
         if element != *equation.first().unwrap() { // TODO: this is probably inefficient, compare with iterator location instead of the actual value
+            flattened.add_operand((element.0, element.1));
             flattened.add_operator(FlatteningOperator::Add);
             
             a[last_addend] = 1;
@@ -146,27 +143,6 @@ fn flatten(equation: std::vec::Vec<(u32, u32)>) -> Result<FlattenedEquation, std
     // let out = sym_2 + 5      // [4, '+', (5,0)]  // 2 = 5 + 5
     // '~one', 'x', '~out', 'sym_1', 'y', 'sym_2'
     
-    // let a = vec![0, 1, 0, 0, 0, 0];
-    // let b = vec![0, 1, 0, 0, 0, 0];
-    // let c = vec![0, 0, 0, 1, 0, 0];
-
-    // let a = vec![0, 0, 0, 1, 0, 0];
-    // let b = vec![0, 1, 0, 0, 0, 0];
-    // let c = vec![0, 0, 0, 0, 1, 0];
-    
-    // let a = vec![0, 1, 0, 0, 1, 0];
-    // let b = vec![1, 0, 0, 0, 0, 0];
-    // let c = vec![0, 0, 0, 0, 0, 1];
-    
-    // let a = vec![5, 0, 0, 0, 0, 1];
-    // let b = vec![1, 0, 0, 0, 0, 0];
-    // let c = vec![0, 0, 1, 0, 0, 0];
-    
-
-// To:      [(1,3),(1,1),(5,0)]; 
-// To:      [((1,1),(1,1),(1,1)),(1,1),(5,0)]
-// 1x1 Multiply 1x1 Multiply 1x1 Add 1x1 Add 5x0
-
 fn gates_to_r1cs(flattened: FlattenedEquation) -> Result<std::vec::Vec<u32>, std::string::String> {
     
     let result = flattened.calculate(3);

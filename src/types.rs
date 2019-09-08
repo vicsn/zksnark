@@ -53,13 +53,11 @@ impl FlattenedEquation {
 
     // add operator
     pub fn add_operator(&mut self, operator: FlatteningOperator) {
-        println!("adding operator: {:?}", operator);
         self.operators.push(operator);
     }
 
     // add gate
     pub fn add_gate(&mut self, a: std::vec::Vec<u32>, b: std::vec::Vec<u32>, c: std::vec::Vec<u32>) {
-        println!("adding gate");
         let gate = Gate {
             a: a,
             b: b,
@@ -69,14 +67,13 @@ impl FlattenedEquation {
     }
 
     // print the content of Flattened_equation
-    // TODO: this print is incorrect, doesn't print two additions
     pub fn print(&self) {
         if self.operands.len() > 0 {
             print!("{}x{} ", self.operands[0].0, self.operands[0].1);
         }
 
         if self.operands.len() > 1 {
-            for i in 0..(self.operators.len() - 1) {
+            for i in 0..(self.operators.len()) {
                 print!("{:?} {}x{} ", self.operators[i], self.operands[i + 1].0, self.operands[i + 1].1);
             }
             print!("\n");
@@ -86,11 +83,10 @@ impl FlattenedEquation {
             self.gates[i].print();
         }
         
-        // let diff = self.operands.len() - self.operators.len();
-        // if diff != 1 {
-        //     panic!("length of operators is not length of operands -1. Difference is: {}.", diff); // TODO: this is not a logical function to panic!
-        // }
-
+        let diff = self.operands.len() - self.operators.len();
+        if diff != 1 {
+            panic!("length of operators is not length of operands -1. Difference is: {}.", diff); // TODO: this is not a logical function to panic!
+        }
     }
     
     // calculate output of Flattened_equation given input
