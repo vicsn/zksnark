@@ -47,57 +47,126 @@ fn flatten(equation: std::vec::Vec<(u32, u32)>) -> Result<FlattenedEquation, std
     let mut flattened = FlattenedEquation {
         operands: vec![],
         operators: vec![],
+        gates: vec![],
     };
+    
+    let vars: usize = 6; // TODO how can we determine the size instead of hardcoding it?
+    let mut _gate = Gate { 
+        a: vec![0; vars],
+        b: vec![0; vars],
+        c: vec![0; vars],
+    };
+    
+    let mut last_var_index: usize = 1; // NOTE: the first element is a special integer element
+    let mut last_addend: usize = last_var_index;
+    
+    let mut a: std::vec::Vec<u32> = vec![0; vars]; // TODO how can we determine the size instead of hardcoding it?
+    let mut b: std::vec::Vec<u32> = vec![0; vars];
+    let mut c: std::vec::Vec<u32> = vec![0; vars];
 
-    for &element in equation.iter() { // TODO why are we using a reference here?
+
+    for &element in equation.iter() {
         // multipland must be larger than 0
         if element.0 == 0 {
             // std::string::String::from("Error Happens!") // TODO how to return an error
             ()
         }
 
-        // add entry for multiplicand bigger than 1
-        if element.0 != 1 {
+        // NOTE: skip ahead for multiplicand of 1 and exponent of 1
+        
+        // TODO: maybe make use of this: we'll always add: (vars[0] or vars[1]) and (vars[i]) and (vars[i+1])
+        // add entry for multiplicand bigger than 1, without x
+        if element.0 != 1 && element.1 == 0 {
+            flattened.add_operand((element.0, 0));
+            
+        // add entry for multiplicant bigger than 1, with x
+        } else if element.0 != 1 && element.1 > 0{
             flattened.add_operand((element.0, 0));
             flattened.add_operator(FlatteningOperator::Multiply);
+            
+            a[0] = element.0;
+            b[last_var_index] = 1;
+            last_var_index += 1;
+            c[last_var_index] = 1;
+            flattened.add_gate(a, b, c);
+            a = vec![0; vars]; // TODO: this is deadugly, can we reinitialize a, b and c? Perhaps by hiding this in the flattened object
+            b = vec![0; vars];
+            c = vec![0; vars];
         }
         
-        // add entry for exponent of 1 or 0
-        if element.1 == 0 || element.1 == 1 {
+        // add entries for exponent bigger than 1
+        if element.1 > 1 {
             flattened.add_operand((element.0, 1));
-        
-        // add entry for exponent bigger than 1
-        } else {
-            flattened.add_operand((element.0, 1));
+            let mut index: usize = 0; // TODO is there a way to re-use _i below ?
             for _i in 0..(element.1 - 1) {
                 flattened.add_operand((element.0, 1));
                 flattened.add_operator(FlatteningOperator::Multiply);
+
+                a[last_var_index] = 1;
+                b[last_var_index - index] = 1;
+                last_var_index += 1;
+                c[last_var_index] = 1;
+                flattened.add_gate(a, b, c);
+                index += 1;
+                a = vec![0; vars]; // TODO: this is deadugly, can we reinitialize a, b and c? Perhaps by hiding this in the flattened object
+                b = vec![0; vars];
+                c = vec![0; vars];
             }
         }
         
-        if element != *equation.last().unwrap() { // TODO: this is probably inefficient?
+        if element != *equation.first().unwrap() { // TODO: this is probably inefficient, compare with iterator location instead of the actual value
             flattened.add_operator(FlatteningOperator::Add);
-        } else {
-            println!("not adding!");
+            
+            a[last_addend] = 1;
+            if element.0 > 1 && element.1 == 0 {
+                a[0] = element.0;
+            } else {
+                a[last_var_index] = 1;  
+            }
+            b[0] = 1;               // NOTE: for an addition gate, the b vector simply multiplies by 1
+            last_var_index += 1;
+            c[last_var_index] = 1;
+            flattened.add_gate(a, b, c);
+            last_addend = last_var_index;
+            a = vec![0; vars]; // TODO: this is deadugly, can we reinitialize a, b and c? Perhaps by hiding this in the flattened object
+            b = vec![0; vars];
+            c = vec![0; vars];
         }
     }
 
     Ok(flattened)
 }
+    // From:    x**3 + x + 5
+    // s . a * s . b - s . c = 0
 
-// From:    x**3 + x + 5
+    // let one = 1              //                  //
+    // let sym_1 = x * x        // [1, '*', (1,1)]  // 3 = 1 * 1 
+    // let y = sym_1 * x        // [2, '*', (1,1)]  // 4 = 1 * 3
+    // let sym_2 = y + x        // [3, '+', (1,1)]  // 5 = 4 + 1
+    // let out = sym_2 + 5      // [4, '+', (5,0)]  // 2 = 5 + 5
+    // '~one', 'x', '~out', 'sym_1', 'y', 'sym_2'
+    
+    // let a = vec![0, 1, 0, 0, 0, 0];
+    // let b = vec![0, 1, 0, 0, 0, 0];
+    // let c = vec![0, 0, 0, 1, 0, 0];
+
+    // let a = vec![0, 0, 0, 1, 0, 0];
+    // let b = vec![0, 1, 0, 0, 0, 0];
+    // let c = vec![0, 0, 0, 0, 1, 0];
+    
+    // let a = vec![0, 1, 0, 0, 1, 0];
+    // let b = vec![1, 0, 0, 0, 0, 0];
+    // let c = vec![0, 0, 0, 0, 0, 1];
+    
+    // let a = vec![5, 0, 0, 0, 0, 1];
+    // let b = vec![1, 0, 0, 0, 0, 0];
+    // let c = vec![0, 0, 1, 0, 0, 0];
+    
+
 // To:      [(1,3),(1,1),(5,0)]; 
 // To:      [((1,1),(1,1),(1,1)),(1,1),(5,0)]
+// 1x1 Multiply 1x1 Multiply 1x1 Add 1x1 Add 5x0
 
-// given: (1,3),(1,1)(5,0)
-// (1)
-// let one = 1              //                  //
-// let sym_1 = x * x        // [1, '*', (1,1)]  // 3 = 1 * 1
-// let y = sym_1 * x        // [2, '*', (1,1)]  // 4 = 1 * 3
-// let sym_2 = y + x        // [3, '+', (1,1)]  // 5 = 4 + 1
-// let out = sym_2 + 5      // [4, '+', (5,0)]  // 2 = 5 + 5
-// 
-// (2) '~one', 'x', '~out', 'sym_1', 'y', 'sym_2'
 fn gates_to_r1cs(flattened: FlattenedEquation) -> Result<std::vec::Vec<u32>, std::string::String> {
     
     let result = flattened.calculate(3);
@@ -125,22 +194,6 @@ fn gates_to_r1cs(flattened: FlattenedEquation) -> Result<std::vec::Vec<u32>, std
 
     //     }
     // }
-    
-    // let a = vec![0, 1, 0, 0, 0, 0];
-    // let b = vec![0, 1, 0, 0, 0, 0];
-    // let c = vec![0, 0, 0, 1, 0, 0];
-
-    // let a = vec![0, 0, 0, 1, 0, 0];
-    // let b = vec![0, 1, 0, 0, 0, 0];
-    // let c = vec![0, 0, 0, 0, 1, 0];
-    
-    // let a = vec![0, 1, 0, 0, 1, 0];
-    // let b = vec![1, 0, 0, 0, 0, 0];
-    // let c = vec![0, 0, 0, 0, 0, 1];
-    
-    // let a = vec![5, 0, 0, 0, 0, 1];
-    // let b = vec![1, 0, 0, 0, 0, 0];
-    // let c = vec![0, 0, 1, 0, 0, 0];
     
     // let r1cs = vec![1, 3, 35, 9, 27, 30];
 }
