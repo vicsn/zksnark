@@ -133,15 +133,56 @@ fn flatten(equation: std::vec::Vec<(u32, u32)>) -> Result<FlattenedEquation, std
 
     Ok(flattened)
 }
-    // From:    x**3 + x + 5
-    // s . a * s . b - s . c = 0
 
-    // let one = 1              //                  //
-    // let sym_1 = x * x        // [1, '*', (1,1)]  // 3 = 1 * 1 
-    // let y = sym_1 * x        // [2, '*', (1,1)]  // 4 = 1 * 3
-    // let sym_2 = y + x        // [3, '+', (1,1)]  // 5 = 4 + 1
-    // let out = sym_2 + 5      // [4, '+', (5,0)]  // 2 = 5 + 5
-    // '~one', 'x', '~out', 'sym_1', 'y', 'sym_2'
+fn lagrange_interpolation(coordinates: std::vec::Vec<(u32, u32)>) -> Result<std::vec::Vec<(u32, u32)>, std::string::String> {
+    let mut partial_functions: std::vec::Vec<std::vec::Vec<(f32, u32>)> = vec![vec![]];
+    
+    // For: (1, 3),(2,2),(3,4)
+    // For: (1, 3),(2,0),(3,0)
+    // (x - 2) * (x - 3) * 3 / ((1 - 2) * (1 - 3))
+    // (x - coordinates[1].x)(x - coordinates[2].x) * coordinates[0].y / (coordinates[0].x - coordinates[1].x)(coordinates[0].x - coordinates[2].x) 
+    // (x**2 - coordinates[1].x*x - coordinates[2].x*x + coordinates[1].x*coordinates[2].x ) * coordinates[0].y / (coordinates[0].x - coordinates[1].x)(coordinates[0].x - coordinates[2].x)
+    // (x**2 - coordinates[1].x*x - coordinates[2].x*x + coordinates[1].x*coordinates[2].x ) * coordinates[0].y / (coordinates[0].x * coordinates[0].x - coordinates[0].x*coordinates[2].x - coordinates[1].x*coordinates[0].x + coordinates[1].x*coordinates[2].x)
+    for i in 0..(coordinates.len()) {
+        let mut adjusted_coordinates: std::vec::Vec<(u32, u32>) = coordinates.clone();
+        
+        // set two y coordinates to 0
+        if i != 0 { adjusted_coordinates[0].1 = 0; }
+        if i != 1 { adjusted_coordinates[1].1 = 0; }
+        if i != 2 { adjusted_coordinates[2].1 = 0; }
+        
+        // move non-0 y coordinate to index 0 of vector
+        adjusted_coordinates.sort(|a, b| b.1.cmp(a.1));
+
+        divisor: u32 = adjusted_coordinates[0].1 / (adjusted_coordinates[0].0 * adjusted_coordinates[0].0 - adjusted_coordinates[0].0*adjusted_coordinates[2].0 - adjusted_coordinates[1].0*adjusted_coordinates[0].0 + adjusted_coordinates[1].0*adjusted_coordinates[2].0);
+
+        partial_functions.push(vec![
+            (1/divisor ,2)
+            (- adjusted_coordinates[2].0/divisor,1)
+            (adjusted_coordinates[1].0/divisor,0)
+        ]);
+    }
+        
+    // print to see if we did it right
+    for i in 0..(partial_functions.len()) {
+        for j in 0..(partial_functions[i].len()) {
+            println!("{}x{}", partial_functions[i][j].0, partial_functions[i][j].1);
+        }
+    }
+
+    // sum partial functions
+    // NOTE: the second coordinate is redundant information, as we always have 2-degree polynomials
+    total_function: std::vec::Vec<(u32, u32)> = vec![];
+    for (func_1, func_2, func_3) in itertools::izip!(&partial_functions[0], &partial_functions[1], &partial_functions[2]) {
+        assert_eq!(func_1.1, func_2.2);
+        assert_eq!(func_1.1, func_2.3);
+        total_function.push(func_1.0 + func_2.0 + func_3.0, func_1.1);
+    }
+    total_function
+    // print to see if we did it right
+    println!("{}x{}, {}x{}, {}x{}", total_function[0].0, total_function[0].1, total_function[1].0, total_function[1].1, total_function[2].0, total_function[2].1);
+
+}
     
 fn r1cs_to_qap(flattened: FlattenedEquation) -> Result<std::vec::Vec<u32>, std::string::String> {
     
@@ -154,6 +195,13 @@ fn r1cs_to_qap(flattened: FlattenedEquation) -> Result<std::vec::Vec<u32>, std::
     println!("");
 
     let a = flattened.a();
+    
+    let tmp = vec![(1,3),(2,2),(3,4)];
+    let res = lagrange_interpolation(tmp);
+    
+    // For: (1, 3),(2,2),(3,4)
+    
+    
     // let mut coordinates: std::vec::Vec<u32> = a[0];
     // vec![];
     // for i in 0..(a.len()) {
@@ -173,13 +221,7 @@ fn r1cs_to_qap(flattened: FlattenedEquation) -> Result<std::vec::Vec<u32>, std::
     // (3,0)
     // (4,5)
     
-    // For: (1, 3),(2,2),(3,4)
-    // For: (1, 3),(2,0),(3,0)
-    // (x - 2) * (x - 3) * 3 / ((1 - 2) * (1 - 3))
-    // (x - coordinates[1].x)(x - coordinates[2].x) * coordinates[0].y / (1 - coordinates[1].x)(1 - coordinates[2].x) // TODO: is "1" a variable?
-    // x**2 - coordinates[1].x*x - coordinates[2].x*x + coordinates[1].x*coordinates[2].x / (1 - coordinates[1].x)(1 - coordinates[2].x)
-    // x**2 - coordinates[1].x*x - coordinates[2].x*x + coordinates[1].x*coordinates[2].x / (1 - coordinates[1].x)(1 - coordinates[2].x)
-    // x**2 - coordinates[1].x*x - coordinates[2].x*x + coordinates[1].x*coordinates[2].x / (1 - coordinates[1].x)(1 - coordinates[2].x)
+    // for coordinates: lagrange_interpolation(coordinates);
     
     // next we simply sum the polynomials
     // let mut sum: std::vec::Vec = vec![0; 6]; // TODO: can we infer 6 from something?
