@@ -15,26 +15,44 @@ pub struct Gate {
 
 impl Gate {
     // set vectors
-    pub fn set_vectors(&mut self, a: std::vec::Vec<u32>, b: std::vec::Vec<u32>, c: std::vec::Vec<u32>) { // TODO: check if this way of passing parameters is proper Rust-like style
+    // TODO: check if this way of passing parameters is proper Rust-like style
+    pub fn set_vectors(&mut self, a: std::vec::Vec<u32>, b: std::vec::Vec<u32>, c: std::vec::Vec<u32>) { 
         self.a = a;
         self.b = b;
         self.c = c;
     }
 
+    pub fn a(&self) -> &std::vec::Vec<u32> {
+        &self.a
+    }
+
+    pub fn b(&self) -> &std::vec::Vec<u32> {
+        &self.b
+    }
+
+    pub fn c(&self) -> &std::vec::Vec<u32> {
+        &self.c
+    }
+
     // print the content of Gate
-    pub fn print(&self) {
+    pub fn print_a(&self) {
         for i in 0..(self.a.len()) {
             print!("{} ", self.a[i]);
         }
-        print!("\n");
+    }
+
+    // print the content of Gate
+    pub fn print_b(&self) {
         for i in 0..(self.b.len()) {
             print!("{} ", self.b[i]);
         }
-        print!("\n");
+    }
+
+    // print the content of Gate
+    pub fn print_c(&self) {
         for i in 0..(self.c.len()) {
             print!("{} ", self.c[i]);
         }
-        print!("\n\n");
     }
 }
 
@@ -66,6 +84,30 @@ impl FlattenedEquation {
         self.gates.push(gate);
     }
 
+    pub fn a(&self) -> std::vec::Vec<std::vec::Vec<u32>> {
+        let mut vec: std::vec::Vec<std::vec::Vec<u32>> = vec![];
+        for i in 0..(self.gates.len()) {
+            vec.push(self.gates[i].a().to_vec()); // TODO: instead of a copy, reference?
+        }
+        vec
+    }
+
+    pub fn b(&self) -> std::vec::Vec<std::vec::Vec<u32>> {
+        let mut vec: std::vec::Vec<std::vec::Vec<u32>> = vec![];
+        for i in 0..(self.gates.len()) {
+            vec.push(self.gates[i].b().to_vec()); // TODO: instead of a copy, reference?
+        }
+        vec
+    }
+
+    pub fn c(&self) -> std::vec::Vec<std::vec::Vec<u32>> {
+        let mut vec: std::vec::Vec<std::vec::Vec<u32>> = vec![];
+        for i in 0..(self.gates.len()) {
+            vec.push(self.gates[i].c().to_vec()); // TODO: instead of a copy, reference?
+        }
+        vec
+    }
+
     // print the content of Flattened_equation
     pub fn print(&self) {
         if self.operands.len() > 0 {
@@ -80,8 +122,22 @@ impl FlattenedEquation {
         }
         
         for i in 0..(self.gates.len()) {
-            self.gates[i].print();
+            self.gates[i].print_a();
+            print!("\n");
         }
+        print!("\n");
+        
+        for i in 0..(self.gates.len()) {
+            self.gates[i].print_b();
+            print!("\n");
+        }
+        print!("\n");
+        
+        for i in 0..(self.gates.len()) {
+            self.gates[i].print_c();
+            print!("\n");
+        }
+        print!("\n");
         
         let diff = self.operands.len() - self.operators.len();
         if diff != 1 {
@@ -90,7 +146,7 @@ impl FlattenedEquation {
     }
     
     // calculate output of Flattened_equation given input
-    pub fn calculate(&self, input: u32) -> std::vec::Vec<u32> {
+    pub fn witness(&self, input: u32) -> std::vec::Vec<u32> {
         let mut latest: u32 = input; 
         let mut result: std::vec::Vec<u32> = vec![input];
 

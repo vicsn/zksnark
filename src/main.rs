@@ -143,46 +143,56 @@ fn flatten(equation: std::vec::Vec<(u32, u32)>) -> Result<FlattenedEquation, std
     // let out = sym_2 + 5      // [4, '+', (5,0)]  // 2 = 5 + 5
     // '~one', 'x', '~out', 'sym_1', 'y', 'sym_2'
     
-fn gates_to_r1cs(flattened: FlattenedEquation) -> Result<std::vec::Vec<u32>, std::string::String> {
+fn r1cs_to_qap(flattened: FlattenedEquation) -> Result<std::vec::Vec<u32>, std::string::String> {
     
-    let result = flattened.calculate(3);
-    Ok(result)
+    let result = flattened.witness(3);
     
-    // let triples = vec![vec![0; flattened_equation.operands.len() - 1]];
-    // let outgoing_var_index = 3; // the first three indexes are already set // TODO: improve this explanation
-    // for &operand in flattened.operands.iter() {
-    //     let a = vec![0; params];
-    //     let b = vec![0; params];
-    //     let c = vec![0; params];
-        
-    //     for &multiplicand in addend.iter() {
-    //         let a_m = vec![0; params];
-    //         let b_m = vec![0; params];
-    //         let c_m = vec![0; params];
-            
-    //         // if multiplicand.1 == 1 {
-    //         //     a[1] = element.0;
-    //         // } else if element.1 == 0 {
-    //         //     a[1] = element.0;
-    //         // } else {
-    //         //     () // TODO: error
-    //         // }
+    // TODO: temporary print to see if we're doing things correctly
+    for i in 0..(result.len()) {
+        print!("{}", result[i]);
+    }
+    println!("");
 
-    //     }
+    let a = flattened.a();
+    // let mut coordinates: std::vec::Vec<u32> = a[0];
+    // vec![];
+    // for i in 0..(a.len()) {
+    //     coordinates.push(a[i]);
     // }
     
-    // let r1cs = vec![1, 3, 35, 9, 27, 30];
+    // TODO: temporary print to see if we're doing things correctly
+    // for i in 0..(coordinates.len()) {
+    //     print!("{}", coordinates[i]);
+    // }
+    // println!("");
+
+    // now we're going to do lagrange interpolation on a set of (4 pairs of (x,y) coordinates)
+    // where evaluating the polynomial at i gets you the first value of the ith a vector
+    // (1,0)
+    // (2,0)
+    // (3,0)
+    // (4,5)
+    
+    // For: (1, 3),(2,2),(3,4)
+    // For: (1, 3),(2,0),(3,0)
+    // (x - 2) * (x - 3) * 3 / ((1 - 2) * (1 - 3))
+    // (x - coordinates[1].x)(x - coordinates[2].x) * coordinates[0].y / (1 - coordinates[1].x)(1 - coordinates[2].x) // TODO: is "1" a variable?
+    // x**2 - coordinates[1].x*x - coordinates[2].x*x + coordinates[1].x*coordinates[2].x / (1 - coordinates[1].x)(1 - coordinates[2].x)
+    // x**2 - coordinates[1].x*x - coordinates[2].x*x + coordinates[1].x*coordinates[2].x / (1 - coordinates[1].x)(1 - coordinates[2].x)
+    // x**2 - coordinates[1].x*x - coordinates[2].x*x + coordinates[1].x*coordinates[2].x / (1 - coordinates[1].x)(1 - coordinates[2].x)
+    
+    // next we simply sum the polynomials
+    // let mut sum: std::vec::Vec = vec![0; 6]; // TODO: can we infer 6 from something?
+    // for i in 0..(polys.len()) {
+    //     sum[i] = polys[i][0] + polys[i][1] + polys[i][2];
+    // }
+    //
+
+    Ok(result)
+    
 }
 
-// s . a * s . b - s . c = 0
-fn solve_constraint(a: std::vec::Vec<u32>, b: std::vec::Vec<u32>, c: std::vec::Vec<u32>, s: std::vec::Vec<u32>) -> bool {
-    let r1: u32 = s.iter().zip(a.iter()).map(|(x, y)| x * y).sum();
-    let r2: u32 = s.iter().zip(b.iter()).map(|(x, y)| x * y).sum();
-    let r3: u32 = s.iter().zip(c.iter()).map(|(x, y)| x * y).sum();
-    r1 * r2 - r3 == 0
-}
-
-// s . a * s . b - s . c = 0
+// s . a * s . b - s . c == 0
 fn validate_constraints(a: std::vec::Vec<u32>, b: std::vec::Vec<u32>, c: std::vec::Vec<u32>, s: std::vec::Vec<u32>) -> bool {
     let r1: u32 = s.iter().zip(a.iter()).map(|(x, y)| x * y).sum();
     let r2: u32 = s.iter().zip(b.iter()).map(|(x, y)| x * y).sum();
