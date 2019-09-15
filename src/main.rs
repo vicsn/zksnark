@@ -142,23 +142,95 @@ fn lagrange_interpolation(coordinates: std::vec::Vec<(u32, u32)>) -> Result<std:
     // create partial quadratic equations when two y coordinates are set to 0
     for i in 0..(coordinates.len()) {
         // cast uints to floats
-        let mut adjusted_coordinates: std::vec::Vec<(f32, f32)> = coordinates.iter().map(|&e| (e.0 as f32, e.1 as f32)).collect();
+        let mut mapped: std::vec::Vec<(f32, f32)> = coordinates.iter().map(|&e| (e.0 as f32, e.1 as f32)).collect();
         
-        // set two y coordinates to 0
-        if i != 0 { adjusted_coordinates[0].1 = 0.0; }
-        if i != 1 { adjusted_coordinates[1].1 = 0.0; }
-        if i != 2 { adjusted_coordinates[2].1 = 0.0; }
+        // set all except for one y coordinate to 0
+        for j in 0..(mapped.len()) {
+            if i != j { mapped[j].1 = 0.0; }
+        }
+
+        // move non-zero y coordinate to index 0 of vector
+        mapped.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+
+        // TODO: remove this, just testing if we exit only the nested forloop
+        for n in 1..4 {
+        for m in 1..4 {
+            println!("test for loop: {} {}", n, m);
+            if m == 2 break;
+        }}
+        // calculate divisor: summation_i((X0 - Xi)) for i bigger than 0
+        // calculate multiplier: Y0 * multiplication_i((X - Xi)) for i bigger than 0
+        // x - [1] 
+        // x2 + (-1)^i)*[1]+[2]x + (-1)^(i))*[1]*[2]
+        // x3 + (-1)^i)*[1]+[2]+(1*[3])x2 + (-1)^(i))*[1]*[2]+(([1]+[2])*[3])x  + (-1)^i)*[1]*[2]*[3]
+        //
+        // 1. (x-2)
+        // 2. (x-2)(x-3)
+        // 3. (x-2)(x-3)(x-4)
+        //
+        // Imagine we only have mapped.len() == 2, coordinates (1,3)(2,0)
+        // Before iteration: [0,0]
+        // First iteration: [1, - (2)]
+        //
+        // Imagine we have mapped.len() == 3, coordinates (1,3)(2,0)(3,0)
+        // Second iteration: [1, - (2 + 3), + (2*3)]
+        let mut divisor: f32 = 1;
+        let mut multipliers: vec::vec::Vec<u32> = vec![1];//vec![0; mapped.len()];
+        for j in 1..(mapped.len()) {
+            divistor = divisor * (mapped[0].0 - mapped[j].0);
+            
+            multipliers.push((-1.0).pow(j)*(mapped[j].0); // TODO: the minus may be dependent on the number of elements. Or more easily, put the minus in the additions/multiplications below.
+            // 0. 1
+            // 1. -2
+            // 2.  3
+            // 3. -4
+            
+            for k in 1..(mapped.len() - 1) { 
+                if j == 1 {
+                    break; // TODO: this break can be moved elsewhere
+                }
+                if k == 1 {
+                    break; // TODO: is this even needed? We just start to use the things below from j==2 onwards 
+                }
+
+                if j % 2 == 0 {
+                    multipliers[j-k] = (multipliers[j-k] * multipliers[j]);
+                } else {
+                    multipliers[j-k] = (multipliers[j-k] + multipliers[j]);
+                }
+            }
+            // 0. 1
+            // 1. -(2+3) 
+            // 2.  (3*2)
+            // 3. -(4+3+2)
+            
+            multipliers[j] = (multipliers[j-1] * multipliers[j]);
+            // 0. 1
+            // 1. -(2+3) 
+            // 2.  (3*2)
+            // 3. -(4+3+2)
+
+            // for k in 1..(mapped.len()) { // TODO: we might be able to get rid of this forloop
+            //     multipliers[j] += mapped[j].0;
+            //     if k % 2 == 0 {
+            //         multipliers[j] = (multipliers[j] * mapped[k].0);
+            //     }
+            //     if i == j {
+            //         multipliers[j] += multipliers[j] * (-1.0).pow(j);
+            //         break;
+            //     }
+            // }
+        }
         
-        // move non-0 y coordinate to index 0 of vector
-        adjusted_coordinates.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        for j in 0..(mapped.len()) {
+            println!("{} {} {}",); 
+        }
 
-        let mut multiplier: f32 = adjusted_coordinates[0].1 / (adjusted_coordinates[0].0 * adjusted_coordinates[0].0 - adjusted_coordinates[0].0*adjusted_coordinates[2].0 - adjusted_coordinates[1].0*adjusted_coordinates[0].0 + adjusted_coordinates[1].0*adjusted_coordinates[2].0);
-
-        partial_functions.push(vec![
-            (1.0 * multiplier, 2),
-            (- (adjusted_coordinates[1].0 + adjusted_coordinates[2].0) * multiplier, 1),
-            (adjusted_coordinates[1].0 * adjusted_coordinates[2].0 * multiplier, 0)
-        ]);
+        for j in 0..(mapped.len()) {
+            partial_functions.push(vec![
+                (mapped[0].1 * multipliers[j]/divisor, j),
+            ]);
+        }
     }
         
     // print to see if we did it right
@@ -170,17 +242,18 @@ fn lagrange_interpolation(coordinates: std::vec::Vec<(u32, u32)>) -> Result<std:
     }
 
     // sum partial functions
-    for (func_1, func_2, func_3) in itertools::izip!(&partial_functions[0], &partial_functions[1], &partial_functions[2]) {
+    for (func_1, func_2, func_3, func_4) in itertools::izip!(&partial_functions[0], &partial_functions[1], &partial_functions[2], &partial_functions[3]) {
         // NOTE: the second coordinate is redundant information, as we always have 2-degree polynomials
         // check if second coordinates are really equal
         assert_eq!(func_1.1, func_2.1);
         assert_eq!(func_1.1, func_3.1);
+        assert_eq!(func_1.1, func_4.1);
 
-        total_function.push((func_1.0 + func_2.0 + func_3.0, func_1.1));
+        total_function.push((func_1.0 + func_2.0 + func_3.0 + func_4.0, func_1.1));
     }
     // print to see if we did it right
     if total_function.len() > 0 {
-        println!("{}x{}, {}x{}, {}x{}", total_function[0].0, total_function[0].1, total_function[1].0, total_function[1].1, total_function[2].0, total_function[2].1);
+        println!("{}x{} {}x{} {}x{} {}x{}", total_function[0].0, total_function[0].1, total_function[1].0, total_function[1].1, total_function[2].0, total_function[2].1, total_function[3].0, total_function[3].1);
     }
 
     Ok(total_function)
@@ -197,7 +270,7 @@ fn r1cs_to_qap(flattened: FlattenedEquation) -> Result<std::vec::Vec<u32>, std::
 
     let a = flattened.a();
     
-    let tmp = vec![(1,3),(2,2),(3,4)];
+    let tmp = vec![(1,3),(2,2),(3,4),(6,5)];
     let res = lagrange_interpolation(tmp);
     
     // let mut coordinates: std::vec::Vec<u32> = a[0];
