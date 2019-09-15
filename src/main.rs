@@ -166,12 +166,12 @@ fn lagrange_interpolation(coordinates: std::vec::Vec<(u32, u32)>) -> Result<std:
         //       (mapped[1].0 * mapped[2].0)
         // ];
         let mut multipliers: std::vec::Vec<f32> = vec![
-            1.0,
-            - (mapped[1].0 + mapped[2].0 + mapped[3].0),
-              (1.0 + mapped[2].0) * (mapped[1].0 + mapped[2].0),
-            - (mapped[1].0 * mapped[2].0 * mapped[3].0)
+            - (mapped[1].0 * mapped[2].0 * mapped[3].0),                                  // x0
+              (mapped[1].0 * mapped[2].0) + (mapped[3].0 * (mapped[1].0 + mapped[2].0)),  // x1
+            - (mapped[1].0 + mapped[2].0 + mapped[3].0),                                  // x2
+            1.0                                                                           // x3
         ];
-    
+
         // create and push partial function
         let mut partial_func: std::vec::Vec<(f32, usize)> = vec![];
         for j in 0..(mapped.len()) {
@@ -182,14 +182,6 @@ fn lagrange_interpolation(coordinates: std::vec::Vec<(u32, u32)>) -> Result<std:
         partial_functions.push(partial_func);
     }
         
-    // print to see if we did it right
-    for i in 0..(partial_functions.len()) {
-        for j in 0..(partial_functions[i].len()) {
-            print!("{}x{} ", partial_functions[i][j].0, partial_functions[i][j].1);
-        }
-        println!("");
-    }
-
     // sum partial functions
     for (func_1, func_2, func_3, func_4) in itertools::izip!(&partial_functions[0], &partial_functions[1], &partial_functions[2], &partial_functions[3]) {
         // NOTE: the second coordinate is redundant information, as we always have 2-degree polynomials
@@ -218,39 +210,27 @@ fn r1cs_to_qap(flattened: FlattenedEquation) -> Result<std::vec::Vec<u32>, std::
     }
     println!("\n");
 
-    let a = flattened.a();
-    
+    // TODO: this is just a test
     let tmp = vec![(1,3),(2,2),(3,4),(5,5)];
     let res = lagrange_interpolation(tmp);
     
-    // let mut coordinates: std::vec::Vec<u32> = a[0];
-    // vec![];
-    // for i in 0..(a.len()) {
-    //     coordinates.push(a[i]);
-    // }
+    let a = flattened.a();
+    let mut coordinates: std::vec::Vec<u32> = vec![];
+    for i in 0..(a.len()) {
+        coordinates.push(a[i][0]);
+    }
     
     // TODO: temporary print to see if we're doing things correctly
-    // for i in 0..(coordinates.len()) {
-    //     print!("{}", coordinates[i]);
-    // }
-    // println!("");
+    for i in 0..(coordinates.len()) {
+        print!("{} ", coordinates[i]);
+    }
+    println!("\n");
 
     // now we're going to do lagrange interpolation on a set of (4 pairs of (x,y) coordinates)
     // where evaluating the polynomial at i gets you the first value of the ith a vector
-    // (1,0)
-    // (2,0)
-    // (3,0)
-    // (4,5)
+    let tmp2 = vec![(1,0),(2,0),(3,0),(4,5)];
+    let res2 = lagrange_interpolation(tmp2);
     
-    // for coordinates: lagrange_interpolation(coordinates);
-    
-    // next we simply sum the polynomials
-    // let mut sum: std::vec::Vec = vec![0; 6]; // TODO: can we infer 6 from something?
-    // for i in 0..(polys.len()) {
-    //     sum[i] = polys[i][0] + polys[i][1] + polys[i][2];
-    // }
-    //
-
     Ok(result)
     
 }
