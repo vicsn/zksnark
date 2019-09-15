@@ -146,27 +146,24 @@ impl FlattenedEquation {
     }
     
     // calculate output of Flattened_equation given input
+    // TODO: this printing function is incomplete / slightly hardcoded at the moment
     pub fn witness(&self, input: u32) -> std::vec::Vec<u32> {
         let mut latest: u32 = input; 
-        let mut result: std::vec::Vec<u32> = vec![input];
+        let mut result: std::vec::Vec<u32> = vec![1, input];
 
         for i in 0..self.operators.len() {
             match self.operators[i] {
+                // TODO: it may not be correct to ignore the exponent / second tuple value.
                 FlatteningOperator::Add => {
-                    latest = latest + self.operands[i + 1].0; // TODO: it may not be correct to ignore the exponent / second tuple value.
-                    result[i] = latest;
+                    latest = latest + self.operands[i + 1].0 * result[i + 1].pow(self.operands[i + 1].1); 
+                    result.push(latest);
                 },
                 FlatteningOperator::Substract => {
-                    latest = latest - self.operands[i + 1].0;
-                    result[i] = latest;
                 },
                 FlatteningOperator::Multiply => {
-                    latest = latest * self.operands[i + 1].0;
-                    result[i] = latest;
+                    result.push(latest * result[i + 1]);
                 },
                 FlatteningOperator::Divide => {
-                    latest = latest / self.operands[i + 1].0;
-                    result[i] = latest;
                 },
             }
         }

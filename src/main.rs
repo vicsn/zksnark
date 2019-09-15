@@ -12,6 +12,7 @@
 
 mod types;
 use crate::types::*;
+#[macro_use] extern crate itertools;
 
 /// Evaluate x**3 + x + 5
 ///
@@ -134,73 +135,70 @@ fn flatten(equation: std::vec::Vec<(u32, u32)>) -> Result<FlattenedEquation, std
     Ok(flattened)
 }
 
-fn lagrange_interpolation(coordinates: std::vec::Vec<(u32, u32)>) -> Result<std::vec::Vec<(u32, u32)>, std::string::String> {
-    let mut partial_functions: std::vec::Vec<std::vec::Vec<(f32, u32>)> = vec![vec![]];
+fn lagrange_interpolation(coordinates: std::vec::Vec<(u32, u32)>) -> Result<std::vec::Vec<(f32, u32)>, std::string::String> {
+    let mut total_function: std::vec::Vec<(f32, u32)> = vec![];
+    let mut partial_functions: std::vec::Vec<std::vec::Vec<(f32, u32)>> = vec![];
     
-    // For: (1, 3),(2,2),(3,4)
-    // For: (1, 3),(2,0),(3,0)
-    // (x - 2) * (x - 3) * 3 / ((1 - 2) * (1 - 3))
-    // (x - coordinates[1].x)(x - coordinates[2].x) * coordinates[0].y / (coordinates[0].x - coordinates[1].x)(coordinates[0].x - coordinates[2].x) 
-    // (x**2 - coordinates[1].x*x - coordinates[2].x*x + coordinates[1].x*coordinates[2].x ) * coordinates[0].y / (coordinates[0].x - coordinates[1].x)(coordinates[0].x - coordinates[2].x)
-    // (x**2 - coordinates[1].x*x - coordinates[2].x*x + coordinates[1].x*coordinates[2].x ) * coordinates[0].y / (coordinates[0].x * coordinates[0].x - coordinates[0].x*coordinates[2].x - coordinates[1].x*coordinates[0].x + coordinates[1].x*coordinates[2].x)
+    // create partial quadratic equations when two y coordinates are set to 0
     for i in 0..(coordinates.len()) {
-        let mut adjusted_coordinates: std::vec::Vec<(u32, u32>) = coordinates.clone();
+        // cast uints to floats
+        let mut adjusted_coordinates: std::vec::Vec<(f32, f32)> = coordinates.iter().map(|&e| (e.0 as f32, e.1 as f32)).collect();
         
         // set two y coordinates to 0
-        if i != 0 { adjusted_coordinates[0].1 = 0; }
-        if i != 1 { adjusted_coordinates[1].1 = 0; }
-        if i != 2 { adjusted_coordinates[2].1 = 0; }
+        if i != 0 { adjusted_coordinates[0].1 = 0.0; }
+        if i != 1 { adjusted_coordinates[1].1 = 0.0; }
+        if i != 2 { adjusted_coordinates[2].1 = 0.0; }
         
         // move non-0 y coordinate to index 0 of vector
-        adjusted_coordinates.sort(|a, b| b.1.cmp(a.1));
+        adjusted_coordinates.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
-        divisor: u32 = adjusted_coordinates[0].1 / (adjusted_coordinates[0].0 * adjusted_coordinates[0].0 - adjusted_coordinates[0].0*adjusted_coordinates[2].0 - adjusted_coordinates[1].0*adjusted_coordinates[0].0 + adjusted_coordinates[1].0*adjusted_coordinates[2].0);
+        let mut multiplier: f32 = adjusted_coordinates[0].1 / (adjusted_coordinates[0].0 * adjusted_coordinates[0].0 - adjusted_coordinates[0].0*adjusted_coordinates[2].0 - adjusted_coordinates[1].0*adjusted_coordinates[0].0 + adjusted_coordinates[1].0*adjusted_coordinates[2].0);
 
         partial_functions.push(vec![
-            (1/divisor ,2)
-            (- adjusted_coordinates[2].0/divisor,1)
-            (adjusted_coordinates[1].0/divisor,0)
+            (1.0 * multiplier, 2),
+            (- (adjusted_coordinates[1].0 + adjusted_coordinates[2].0) * multiplier, 1),
+            (adjusted_coordinates[1].0 * adjusted_coordinates[2].0 * multiplier, 0)
         ]);
     }
         
     // print to see if we did it right
     for i in 0..(partial_functions.len()) {
         for j in 0..(partial_functions[i].len()) {
-            println!("{}x{}", partial_functions[i][j].0, partial_functions[i][j].1);
+            print!("{}x{} ", partial_functions[i][j].0, partial_functions[i][j].1);
         }
+        println!("");
     }
 
     // sum partial functions
-    // NOTE: the second coordinate is redundant information, as we always have 2-degree polynomials
-    total_function: std::vec::Vec<(u32, u32)> = vec![];
     for (func_1, func_2, func_3) in itertools::izip!(&partial_functions[0], &partial_functions[1], &partial_functions[2]) {
-        assert_eq!(func_1.1, func_2.2);
-        assert_eq!(func_1.1, func_2.3);
-        total_function.push(func_1.0 + func_2.0 + func_3.0, func_1.1);
-    }
-    total_function
-    // print to see if we did it right
-    println!("{}x{}, {}x{}, {}x{}", total_function[0].0, total_function[0].1, total_function[1].0, total_function[1].1, total_function[2].0, total_function[2].1);
+        // NOTE: the second coordinate is redundant information, as we always have 2-degree polynomials
+        // check if second coordinates are really equal
+        assert_eq!(func_1.1, func_2.1);
+        assert_eq!(func_1.1, func_3.1);
 
+        total_function.push((func_1.0 + func_2.0 + func_3.0, func_1.1));
+    }
+    // print to see if we did it right
+    if total_function.len() > 0 {
+        println!("{}x{}, {}x{}, {}x{}", total_function[0].0, total_function[0].1, total_function[1].0, total_function[1].1, total_function[2].0, total_function[2].1);
+    }
+
+    Ok(total_function)
 }
     
 fn r1cs_to_qap(flattened: FlattenedEquation) -> Result<std::vec::Vec<u32>, std::string::String> {
     
-    let result = flattened.witness(3);
-    
     // TODO: temporary print to see if we're doing things correctly
+    let result = flattened.witness(3);
     for i in 0..(result.len()) {
-        print!("{}", result[i]);
+        print!("{} ", result[i]);
     }
-    println!("");
+    println!("\n");
 
     let a = flattened.a();
     
     let tmp = vec![(1,3),(2,2),(3,4)];
     let res = lagrange_interpolation(tmp);
-    
-    // For: (1, 3),(2,2),(3,4)
-    
     
     // let mut coordinates: std::vec::Vec<u32> = a[0];
     // vec![];
@@ -247,14 +245,12 @@ fn main() {
     println!("{}", b);
     
     let equations: std::vec::Vec<std::vec::Vec<(u32, u32)>> = vec![vec![(1,3),(1,1),(5,0)]];
-    let mut flattened = Vec::new();
     for equation in equations.iter() {
         let r1 = flatten(equation.to_vec());
         match r1 { // TODO is there another way to do this without cloning?
             Ok(value) => {
                     value.print();
-                    flattened.push(value);
-                    // let r2 = gates_to_r1cs(value);
+                    r1cs_to_qap(value);
                 },
             Err(error) => println!("{}", error),
         }
