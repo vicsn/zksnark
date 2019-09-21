@@ -10,8 +10,10 @@
 //! * [matrix-rank](https://stattrek.com/matrix-algebra/matrix-rank.aspx)
 //! 
 
-mod types;
-use crate::types::*;
+mod gates;
+mod qap;
+use crate::gates::*;
+use crate::qap::*;
 #[macro_use] extern crate itertools;
 
 /// Evaluate x**3 + x + 5
@@ -44,7 +46,6 @@ fn qeval(x: u32) -> u32 {
 /// * The flattened equation
 // TODO: we don't support minus or division yet
 fn flatten(equation: std::vec::Vec<(u32, u32)>) -> Result<FlattenedEquation, std::string::String> {
-    // let mut flattened: std::vec::Vec<std::vec::Vec<(u32, u32)>> = vec![vec![]];
     let mut flattened = FlattenedEquation {
         operands: vec![],
         operators: vec![],
@@ -202,31 +203,34 @@ fn evaluate(x: i32, polynomial: &std::vec::Vec<f32>) -> i32 {
                         as f64, 1) as i32
 }
 
-fn r1cs_to_qap(flattened: FlattenedEquation) -> Result<std::vec::Vec<std::vec::Vec<f32>>, std::string::String> {
+fn r1cs_to_qap(flattened: FlattenedEquation) -> Result<QAP, std::string::String> {
+    let mut qap = QAP {
+        A: vec![],
+        B: vec![],
+        C: vec![],
+    };
+
     // now we're going to do lagrange interpolation on a set of (4 pairs of (x,y) coordinates)
     // where evaluating the polynomial at i gets you the first value of the ith a vector
     let a = flattened.a();
     let b = flattened.b();
     let c = flattened.c();
-    let mut polynomials_a: std::vec::Vec<std::vec::Vec<f32>> = vec![];
-    let mut polynomials_b: std::vec::Vec<std::vec::Vec<f32>> = vec![];
-    let mut polynomials_c: std::vec::Vec<std::vec::Vec<f32>> = vec![];
     for i in 0..6 {
-        polynomials_a.push(interpolate(vec![(1, a[0][i]), (2, a[1][i]), (3, a[2][i]), (4, a[3][i])]));
-        polynomials_b.push(interpolate(vec![(1, b[0][i]), (2, b[1][i]), (3, b[2][i]), (4, b[3][i])]));
-        polynomials_c.push(interpolate(vec![(1, c[0][i]), (2, c[1][i]), (3, c[2][i]), (4, c[3][i])]));
+        qap.add_a(interpolate(vec![(1, a[0][i]), (2, a[1][i]), (3, a[2][i]), (4, a[3][i])]));
+        qap.add_b(interpolate(vec![(1, b[0][i]), (2, b[1][i]), (3, b[2][i]), (4, b[3][i])]));
+        qap.add_c(interpolate(vec![(1, c[0][i]), (2, c[1][i]), (3, c[2][i]), (4, c[3][i])]));
     }
 
     // check results at x=1 
     println!("x={}", 1);
     for i in 0..6 {
-        println!("{}", evaluate(1, &polynomials_a[i]));
-        println!("{}", evaluate(1, &polynomials_b[i]));
-        println!("{}", evaluate(1, &polynomials_c[i]));
+        println!("{}", evaluate(1, &qap.A()[i]));
+        println!("{}", evaluate(1, &qap.B()[i]));
+        println!("{}", evaluate(1, &qap.C()[i]));
         println!("");
     }
     
-    Ok(polynomials_a) // TODO this is not correct return type, what about b and c?
+    Ok(qap)
 }
 
 // s . a * s . b - s . c == 0
