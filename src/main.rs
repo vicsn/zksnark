@@ -195,14 +195,6 @@ fn interpolate(coordinates: std::vec::Vec<(u32, u32)>) -> std::vec::Vec<f32> {
     total_function
 }
     
-fn evaluate(x: i32, polynomial: &std::vec::Vec<f32>) -> i32 {
-    math::round::ceil(  ((*polynomial)[0]*(x.pow(0) as f32) + 
-                        (*polynomial)[1]*(x.pow(1) as f32) + 
-                        (*polynomial)[2]*(x.pow(2) as f32) + 
-                        (*polynomial)[3]*(x.pow(3) as f32)) 
-                        as f64, 1) as i32
-}
-
 fn r1cs_to_qap(flattened: FlattenedEquation) -> Result<QAP, std::string::String> {
     let mut qap = QAP {
         A: vec![],
@@ -221,14 +213,7 @@ fn r1cs_to_qap(flattened: FlattenedEquation) -> Result<QAP, std::string::String>
         qap.add_c(interpolate(vec![(1, c[0][i]), (2, c[1][i]), (3, c[2][i]), (4, c[3][i])]));
     }
 
-    // check results at x=1 
-    println!("x={}", 1);
-    for i in 0..6 {
-        println!("{}", evaluate(1, &qap.A()[i]));
-        println!("{}", evaluate(1, &qap.B()[i]));
-        println!("{}", evaluate(1, &qap.C()[i]));
-        println!("");
-    }
+    qap.evaluate();
     
     Ok(qap)
 }
@@ -241,20 +226,30 @@ fn validate_constraints(a: std::vec::Vec<u32>, b: std::vec::Vec<u32>, c: std::ve
     r1 * r2 - r3 == 0
 }
 
+
+// t = A . s * B . s - C . s
+// first argument 1: r1cs: R1CS or FlattenedEquation?
+// first argument 2: qap: QAP
+fn evaluate_r1cs<T>(vectors: T, witness: std::vec::Vec<u32>) -> bool {
+    vectors
+}
+
 fn main() {
     let b = qeval(3);
     println!("{}", b);
     
     let equation: std::vec::Vec<(u32, u32)> = vec![(1,3),(1,1),(5,0)];
-    let r1 = flatten(equation.to_vec());
-    let qap = match r1 { // TODO is there another way to do this without cloning?
+    let flattened_res = flatten(equation.to_vec());
+    let evaluation = match flattened_res { // TODO is there another way to do this without cloning?
         Ok(value) => {
             value.print();
-            r1cs_to_qap(value)
+            evaluate_r1cs(r1cs_to_qap(value), value.witness);
         },
         Err(error) => {
             println!("{}", error);
             Err(error)
         }
     };
+    println!("Evaluation: {}", evaluation);
+    
 }
