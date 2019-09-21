@@ -245,15 +245,16 @@ fn main() {
     let b = qeval(3);
     println!("{}", b);
     
-    let equations: std::vec::Vec<std::vec::Vec<(u32, u32)>> = vec![vec![(1,3),(1,1),(5,0)]];
-    for equation in equations.iter() {
-        let r1 = flatten(equation.to_vec());
-        match r1 { // TODO is there another way to do this without cloning?
-            Ok(value) => {
-                    value.print();
-                    r1cs_to_qap(value);
-                },
-            Err(error) => println!("{}", error),
+    let equation: std::vec::Vec<(u32, u32)> = vec![(1,3),(1,1),(5,0)];
+    let r1 = flatten(equation.to_vec());
+    let qap = match r1 { // TODO is there another way to do this without cloning?
+        Ok(value) => {
+            value.print();
+            r1cs_to_qap(value)
+        },
+        Err(error) => {
+            println!("{}", error);
+            Err(error)
         }
-    }
+    };
 }
