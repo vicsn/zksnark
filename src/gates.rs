@@ -34,6 +34,7 @@ impl Gate {
         &self.c
     }
 
+    // TODO replace this by a Display implementation
     // print the content of Gate
     pub fn print_a(&self) {
         for i in 0..(self.a.len()) {
@@ -109,6 +110,7 @@ impl FlattenedEquation {
     }
 
     // print the content of Flattened_equation
+    // TODO replace this by a Display implementation
     pub fn print(&self) {
         if self.operands.len() > 0 {
             print!("{}x{} ", self.operands[0].0, self.operands[0].1);

@@ -195,11 +195,11 @@ fn interpolate(coordinates: std::vec::Vec<(u32, u32)>) -> std::vec::Vec<f32> {
     total_function
 }
     
-fn r1cs_to_qap(flattened: FlattenedEquation) -> Result<QAP, std::string::String> {
+fn r1cs_to_qap(flattened: FlattenedEquation) -> QAP {
     let mut qap = QAP {
-        A: vec![],
-        B: vec![],
-        C: vec![],
+        a: vec![],
+        b: vec![],
+        c: vec![],
     };
 
     // now we're going to do lagrange interpolation on a set of (4 pairs of (x,y) coordinates)
@@ -213,9 +213,7 @@ fn r1cs_to_qap(flattened: FlattenedEquation) -> Result<QAP, std::string::String>
         qap.add_c(interpolate(vec![(1, c[0][i]), (2, c[1][i]), (3, c[2][i]), (4, c[3][i])]));
     }
 
-    qap.evaluate();
-    
-    Ok(qap)
+    qap
 }
 
 // s . a * s . b - s . c == 0
@@ -230,8 +228,26 @@ fn validate_constraints(a: std::vec::Vec<u32>, b: std::vec::Vec<u32>, c: std::ve
 // t = A . s * B . s - C . s
 // first argument 1: r1cs: R1CS or FlattenedEquation?
 // first argument 2: qap: QAP
-fn evaluate_r1cs<T>(vectors: T, witness: std::vec::Vec<u32>) -> bool {
-    vectors
+// TODO: ensure this works for both types of R1CS. See the function above
+fn evaluate_r1cs(qap: QAP, s: std::vec::Vec<u32>) -> bool {
+    // let r1: std::vec::Vec<f32> = s.iter().zip(vectors.a.iter()).map(|(x, y)| vec![x*y[0], x*y[1], x*y[2], x*y[3]]).sum();
+    // let r2: std::vec::Vec<f32> = s.iter().zip(vectors.b.iter()).map(|(x, y)| vec![x*y[0], x*y[1], x*y[2], x*y[3]]).sum();
+    // let r3: std::vec::Vec<f32> = s.iter().zip(vectors.c.iter()).map(|(x, y)| vec![x*y[0], x*y[1], x*y[2], x*y[3]]).sum();
+   
+    let v1 = qap.a[0].clone();
+    let v2 = qap.a[0].clone();
+    let v3 = v1 + v2;
+
+    println!("---------------------------------");
+    for i in 0..qap.a[0].value.len() {
+        println!("{} + {} = {}", qap.a[0].value[i], qap.a[0].value[i], v3.value[i]);
+    }
+
+    // r1 * r2 - r3 == t / Z
+    // A . s = [43.0, -73.333, 38.5, -5.166]
+    // B . s = [-3.0, 10.333, -5.0, 0.666]
+    // C . s = [-41.0, 71.666, -24.5, 2.833]
+    true
 }
 
 fn main() {
@@ -243,11 +259,13 @@ fn main() {
     let evaluation = match flattened_res { // TODO is there another way to do this without cloning?
         Ok(value) => {
             value.print();
-            evaluate_r1cs(r1cs_to_qap(value), value.witness);
+            let witness = value.witness(3);
+            let r1cs = r1cs_to_qap(value);
+            evaluate_r1cs(r1cs, witness)
         },
         Err(error) => {
             println!("{}", error);
-            Err(error)
+            false
         }
     };
     println!("Evaluation: {}", evaluation);

@@ -1,63 +1,95 @@
+use std::ops;
+
+#[derive(Clone)]
 pub struct QAP {
-    pub A: std::vec::Vec<std::vec::Vec<f32>>,
-    pub B: std::vec::Vec<std::vec::Vec<f32>>,
-    pub C: std::vec::Vec<std::vec::Vec<f32>>,
+    pub a: std::vec::Vec<Polynomial>,
+    pub b: std::vec::Vec<Polynomial>,
+    pub c: std::vec::Vec<Polynomial>,
 }
 
 impl QAP {
     // set vectors
     // TODO: check if this way of passing parameters is proper Rust-like style
     pub fn add_a(&mut self, a: std::vec::Vec<f32>) {
-        self.A.push(a);
+        self.a.push(Polynomial::from(a));
     }
 
     pub fn add_b(&mut self, b: std::vec::Vec<f32>) {
-        self.B.push(b);
+        self.b.push(Polynomial::from(b));
     }
 
     pub fn add_c(&mut self, c: std::vec::Vec<f32>) {
-        self.C.push(c);
+        self.c.push(Polynomial::from(c));
     }
 
-    pub fn A(&self) -> &std::vec::Vec<std::vec::Vec<f32>> {
-        &self.A
+    pub fn a(&self) -> &std::vec::Vec<Polynomial> {
+        &self.a
     }
 
-    pub fn B(&self) -> &std::vec::Vec<std::vec::Vec<f32>> {
-        &self.B
+    pub fn b(&self) -> &std::vec::Vec<Polynomial> {
+        &self.b
     }
 
-    pub fn C(&self) -> &std::vec::Vec<std::vec::Vec<f32>> {
-        &self.C
+    pub fn c(&self) -> &std::vec::Vec<Polynomial> {
+        &self.c
     }
 
     pub fn evaluate(&self) {
-        for x in 0i32..4 {
+        for x in 1i32..4 {
             for i in 0..6 {
-                println!("A[{}]({})={}", i, x, math::round::ceil(  (self.A[i][0]*(x.pow(0) as f32) + 
-                                                                    self.A[i][1]*(x.pow(1) as f32) + 
-                                                                    self.A[i][2]*(x.pow(2) as f32) + 
-                                                                    self.A[i][3]*(x.pow(3) as f32)) 
+                println!("A[{}]({})={}", i, x, math::round::ceil(  (self.a[i].value[0]*(x.pow(0) as f32) + 
+                                                                    self.a[i].value[1]*(x.pow(1) as f32) + 
+                                                                    self.a[i].value[2]*(x.pow(2) as f32) + 
+                                                                    self.a[i].value[3]*(x.pow(3) as f32)) 
                                                                     as f64, 1) as i32)
             }
         }
-        for x in 0i32..4 {
+        for x in 1i32..4 {
             for i in 0..6 {
-                println!("B[{}]({})={}", i, x, math::round::ceil(  (self.B[i][0]*(x.pow(0) as f32) + 
-                                                                    self.B[i][1]*(x.pow(1) as f32) + 
-                                                                    self.B[i][2]*(x.pow(2) as f32) + 
-                                                                    self.B[i][3]*(x.pow(3) as f32)) 
+                println!("B[{}]({})={}", i, x, math::round::ceil(  (self.b[i].value[0]*(x.pow(0) as f32) + 
+                                                                    self.b[i].value[1]*(x.pow(1) as f32) + 
+                                                                    self.b[i].value[2]*(x.pow(2) as f32) + 
+                                                                    self.b[i].value[3]*(x.pow(3) as f32)) 
                                                                     as f64, 1) as i32)
             }
         }
-        for x in 0i32..4 {
+        for x in 1i32..4 {
             for i in 0..6 {
-                println!("C[{}]({})={}", i, x, math::round::ceil(  (self.C[i][0]*(x.pow(0) as f32) + 
-                                                                    self.C[i][1]*(x.pow(1) as f32) + 
-                                                                    self.C[i][2]*(x.pow(2) as f32) + 
-                                                                    self.C[i][3]*(x.pow(3) as f32)) 
+                println!("C[{}]({})={}", i, x, math::round::ceil(  (self.c[i].value[0]*(x.pow(0) as f32) + 
+                                                                    self.c[i].value[1]*(x.pow(1) as f32) + 
+                                                                    self.c[i].value[2]*(x.pow(2) as f32) + 
+                                                                    self.c[i].value[3]*(x.pow(3) as f32)) 
                                                                     as f64, 1) as i32)
             }
         }
+    }
+}
+
+// we're using a wrapper aroudn std::vec::Vec<f32> so we can implement an ops::Add function for the
+// Polynomial
+#[derive(Clone)]
+pub struct Polynomial {
+    pub value: std::vec::Vec<f32>,
+}
+
+impl From<std::vec::Vec<f32>> for Polynomial {
+    fn from(item: std::vec::Vec<f32>) -> Self {
+        Polynomial { value: item }
+    }
+}
+
+// Add<Polynomial>
+// TODO: check if this is using references correctly
+impl ops::Add for Polynomial {
+    // type Output = Polynomial;
+    type Output = Self;
+
+    // fn add(self, _rhs: Polynomial) -> Polynomial {
+    fn add(self, _rhs: Self) -> Self {
+        let mut sum = Polynomial { value: vec![0.0; _rhs.value.len()] };
+        for ((sumref, lval), rval) in sum.value.iter_mut().zip(&self.value).zip(&_rhs.value) {
+            *sumref = lval + rval;
+        }
+        sum
     }
 }
