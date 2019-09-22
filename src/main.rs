@@ -11,9 +11,11 @@
 //! 
 
 mod gates;
+mod r1cs;
 mod qap;
 use crate::gates::*;
 use crate::qap::*;
+use crate::r1cs::*;
 #[macro_use] extern crate itertools;
 
 /// Evaluate x**3 + x + 5
@@ -228,20 +230,21 @@ fn validate_constraints(a: std::vec::Vec<u32>, b: std::vec::Vec<u32>, c: std::ve
 // t = A . s * B . s - C . s
 // first argument 1: r1cs: R1CS or FlattenedEquation?
 // first argument 2: qap: QAP
+// TODO: we may not need to require the Clone trait
 // TODO: ensure this works for both types of R1CS. See the function above
-fn evaluate_r1cs(qap: QAP, s: std::vec::Vec<u32>) -> bool {
-    // let r1: std::vec::Vec<f32> = s.iter().zip(vectors.a.iter()).map(|(x, y)| vec![x*y[0], x*y[1], x*y[2], x*y[3]]).sum();
-    // let r2: std::vec::Vec<f32> = s.iter().zip(vectors.b.iter()).map(|(x, y)| vec![x*y[0], x*y[1], x*y[2], x*y[3]]).sum();
-    // let r3: std::vec::Vec<f32> = s.iter().zip(vectors.c.iter()).map(|(x, y)| vec![x*y[0], x*y[1], x*y[2], x*y[3]]).sum();
+fn evaluate_r1cs<U, T: Clone + R1CS<U>>(vectors: T, s: std::vec::Vec<u32>) -> bool {
+    let r1: std::vec::Vec<f32> = s.iter().zip(vectors.a().iter()).map(|(x, y)| vec![x*y[0], x*y[1], x*y[2], x*y[3]]).sum();
+    let r2: std::vec::Vec<f32> = s.iter().zip(vectors.b().iter()).map(|(x, y)| vec![x*y[0], x*y[1], x*y[2], x*y[3]]).sum();
+    let r3: std::vec::Vec<f32> = s.iter().zip(vectors.c().iter()).map(|(x, y)| vec![x*y[0], x*y[1], x*y[2], x*y[3]]).sum();
    
-    let v1 = qap.a[0].clone();
-    let v2 = qap.a[0].clone();
-    let v3 = v1 + v2;
+    // let v1 = qap.a[0].clone();
+    // let v2 = qap.a[0].clone();
+    // let v3 = v1 + v2;
 
-    println!("---------------------------------");
-    for i in 0..qap.a[0].value.len() {
-        println!("{} + {} = {}", qap.a[0].value[i], qap.a[0].value[i], v3.value[i]);
-    }
+    // println!("---------------------------------");
+    // for i in 0..qap.a[0].value.len() {
+    //     println!("{} + {} = {}", qap.a[0].value[i], qap.a[0].value[i], v3.value[i]);
+    // }
 
     // r1 * r2 - r3 == t / Z
     // A . s = [43.0, -73.333, 38.5, -5.166]

@@ -1,4 +1,5 @@
 use std::ops;
+use crate::r1cs::R1CS;
 
 #[derive(Clone)]
 pub struct QAP {
@@ -20,18 +21,6 @@ impl QAP {
 
     pub fn add_c(&mut self, c: std::vec::Vec<f32>) {
         self.c.push(Polynomial::from(c));
-    }
-
-    pub fn a(&self) -> &std::vec::Vec<Polynomial> {
-        &self.a
-    }
-
-    pub fn b(&self) -> &std::vec::Vec<Polynomial> {
-        &self.b
-    }
-
-    pub fn c(&self) -> &std::vec::Vec<Polynomial> {
-        &self.c
     }
 
     pub fn evaluate(&self) {
@@ -62,6 +51,21 @@ impl QAP {
                                                                     as f64, 1) as i32)
             }
         }
+    }
+}
+
+// TODO: could replace T by Polynomial 
+impl R1CS<std::vec::Vec<Polynomial>> for QAP { 
+    fn a(&self) -> &std::vec::Vec<Polynomial> {
+        &self.a
+    }
+
+    fn b(&self) -> &std::vec::Vec<Polynomial> {
+        &self.b
+    }
+
+    fn c(&self) -> &std::vec::Vec<Polynomial> {
+        &self.c
     }
 }
 
