@@ -16,7 +16,7 @@ mod qap;
 use crate::gates::*;
 use crate::qap::*;
 use crate::r1cs::*;
-use crate::xxcalc::*;
+extern crate peroxide;
 #[macro_use] extern crate itertools;
 
 /// Evaluate x**3 + x + 5
@@ -140,14 +140,14 @@ fn flatten(equation: std::vec::Vec<(u32, u32)>) -> Result<FlattenedEquation, std
 }
 
 // lagrange interpolation
-fn interpolate(coordinates: std::vec::Vec<(u32, u32)>) -> std::vec::Vec<f32> {
-    let mut total_function: std::vec::Vec<f32> = vec![];
-    let mut partial_functions: std::vec::Vec<std::vec::Vec<f32>> = vec![];
+fn interpolate(coordinates: std::vec::Vec<(u32, u32)>) -> std::vec::Vec<f64> {
+    let mut total_function: std::vec::Vec<f64> = vec![];
+    let mut partial_functions: std::vec::Vec<std::vec::Vec<f64>> = vec![];
     
     // create partial quadratic equations when two y coordinates are set to 0
     for i in 0..(coordinates.len()) {
         // cast uints to floats
-        let mut mapped: std::vec::Vec<(f32, f32)> = coordinates.iter().map(|&e| (e.0 as f32, e.1 as f32)).collect();
+        let mut mapped: std::vec::Vec<(f64, f64)> = coordinates.iter().map(|&e| (e.0 as f64, e.1 as f64)).collect();
         
         // set all except for one y coordinate to 0
         for j in 0..(mapped.len()) {
@@ -158,19 +158,19 @@ fn interpolate(coordinates: std::vec::Vec<(u32, u32)>) -> std::vec::Vec<f32> {
         mapped.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
         // calculate divisor: summation_i((X0 - Xi)) for i bigger than 0
-        let mut divisor: f32 = 1.0;
+        let mut divisor: f64 = 1.0;
         for j in 1..(mapped.len()) {
             divisor = divisor * (mapped[0].0 - mapped[j].0);    
         }
 
         // TODO: this only works for mapped.len() == 4
         // calculate multiplier: Y0 * multiplication_i((X - Xi)) for i bigger than 0
-        // let mut multipliers: std::vec::Vec<f32> = vec![
+        // let mut multipliers: std::vec::Vec<f64> = vec![
         //     1.0,
         //     - (mapped[1].0 + mapped[2].0),
         //       (mapped[1].0 * mapped[2].0)
         // ];
-        let multipliers: std::vec::Vec<f32> = vec![
+        let multipliers: std::vec::Vec<f64> = vec![
             - (mapped[1].0 * mapped[2].0 * mapped[3].0),                                  // x0
               (mapped[1].0 * mapped[2].0) + (mapped[3].0 * (mapped[1].0 + mapped[2].0)),  // x1
             - (mapped[1].0 + mapped[2].0 + mapped[3].0),                                  // x2
@@ -178,7 +178,7 @@ fn interpolate(coordinates: std::vec::Vec<(u32, u32)>) -> std::vec::Vec<f32> {
         ];
 
         // create and push partial function
-        let mut partial_func: std::vec::Vec<f32> = vec![];
+        let mut partial_func: std::vec::Vec<f64> = vec![];
         for j in 0..(mapped.len()) {
             partial_func.push(mapped[0].1 * multipliers[j]/divisor);
         }
@@ -235,23 +235,30 @@ fn validate_constraints(a: std::vec::Vec<u32>, b: std::vec::Vec<u32>, c: std::ve
 // TODO: ensure this works for both types of R1CS. See the function above
 // fn evaluate_r1cs<U: Iter<U>, T: Clone + R1CS<U>>(vectors: T, s: std::vec::Vec<u32>) -> bool {
 fn evaluate_r1cs(vectors: QAP, s: std::vec::Vec<u32>) -> bool {
-    let r_a: Polynomial = s.iter().zip(vectors.a().iter()).map(|(x, y)| Polynomial { value: vec![(*x as f32)*y[0], (*x as f32)*y[1], (*x as f32)*y[2], (*x as f32)*y[3]] }).sum();
-    let r_b: Polynomial = s.iter().zip(vectors.b().iter()).map(|(x, y)| Polynomial { value: vec![(*x as f32)*y[0], (*x as f32)*y[1], (*x as f32)*y[2], (*x as f32)*y[3]] }).sum();
-    let r_c: Polynomial = s.iter().zip(vectors.c().iter()).map(|(x, y)| Polynomial { value: vec![(*x as f32)*y[0], (*x as f32)*y[1], (*x as f32)*y[2], (*x as f32)*y[3]] }).sum();
+    let r_a: Polynomial = s.iter().zip(vectors.a().iter()).map(|(x, y)| Polynomial { value: vec![(*x as f64)*y[0], (*x as f64)*y[1], (*x as f64)*y[2], (*x as f64)*y[3]] }).sum();
+    let r_b: Polynomial = s.iter().zip(vectors.b().iter()).map(|(x, y)| Polynomial { value: vec![(*x as f64)*y[0], (*x as f64)*y[1], (*x as f64)*y[2], (*x as f64)*y[3]] }).sum();
+    let r_c: Polynomial = s.iter().zip(vectors.c().iter()).map(|(x, y)| Polynomial { value: vec![(*x as f64)*y[0], (*x as f64)*y[1], (*x as f64)*y[2], (*x as f64)*y[3]] }).sum();
     
+    let r_a = peroxide::poly(r_a.value);
+    let r_b = peroxide::poly(r_b.value);
+    let r_c = peroxide::poly(r_c.value);
+
+    // TODO: calculation is wrong at the moment, possibly due to the fact that r_c is substracted
+    // from the wrong polynomial elements
     let t = (r_a*r_b) - r_c;
-    // TODO: this is wrong
-    for i in 0..t.value.len() {
-        print!("{}x{} ", t.value[i], i);
+    println!("");
+    for i in 0..t.coef.len() {
+        print!("{}x{} ", t.coef[i], i);
     }
     println!("");
     
     // Z = (x - 1) * (x - 2) * (x - 3) * (x - 4)
-    // TODO: reverse vector
-    // let z = xxcalc::polynomial::Polynomial::new(&[24, -50, 35, -10, 1]);
-    // let t_new = xxcalc::polynomial::Polynomial::new(t.calc);
+    let Z = peroxide::poly(peroxide::c!(24, -50, 35, -10, 1));
+    
     // h = t / Z
+    let h = t / Z;
 
+    // TODO: evaluate if there is a remainder
     true
 }
 

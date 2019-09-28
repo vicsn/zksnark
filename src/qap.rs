@@ -11,43 +11,43 @@ pub struct QAP {
 impl QAP {
     // set vectors
     // TODO: check if this way of passing parameters is proper Rust-like style
-    pub fn add_a(&mut self, a: std::vec::Vec<f32>) {
+    pub fn add_a(&mut self, a: std::vec::Vec<f64>) {
         self.a.push(Polynomial::from(a));
     }
 
-    pub fn add_b(&mut self, b: std::vec::Vec<f32>) {
+    pub fn add_b(&mut self, b: std::vec::Vec<f64>) {
         self.b.push(Polynomial::from(b));
     }
 
-    pub fn add_c(&mut self, c: std::vec::Vec<f32>) {
+    pub fn add_c(&mut self, c: std::vec::Vec<f64>) {
         self.c.push(Polynomial::from(c));
     }
 
     pub fn evaluate(&self) {
         for x in 1i32..4 {
             for i in 0..6 {
-                println!("A[{}]({})={}", i, x, math::round::ceil(  (self.a[i].value[0]*(x.pow(0) as f32) + 
-                                                                    self.a[i].value[1]*(x.pow(1) as f32) + 
-                                                                    self.a[i].value[2]*(x.pow(2) as f32) + 
-                                                                    self.a[i].value[3]*(x.pow(3) as f32)) 
+                println!("A[{}]({})={}", i, x, math::round::ceil(  (self.a[i].value[0]*(x.pow(0) as f64) + 
+                                                                    self.a[i].value[1]*(x.pow(1) as f64) + 
+                                                                    self.a[i].value[2]*(x.pow(2) as f64) + 
+                                                                    self.a[i].value[3]*(x.pow(3) as f64)) 
                                                                     as f64, 1) as i32)
             }
         }
         for x in 1i32..4 {
             for i in 0..6 {
-                println!("B[{}]({})={}", i, x, math::round::ceil(  (self.b[i].value[0]*(x.pow(0) as f32) + 
-                                                                    self.b[i].value[1]*(x.pow(1) as f32) + 
-                                                                    self.b[i].value[2]*(x.pow(2) as f32) + 
-                                                                    self.b[i].value[3]*(x.pow(3) as f32)) 
+                println!("B[{}]({})={}", i, x, math::round::ceil(  (self.b[i].value[0]*(x.pow(0) as f64) + 
+                                                                    self.b[i].value[1]*(x.pow(1) as f64) + 
+                                                                    self.b[i].value[2]*(x.pow(2) as f64) + 
+                                                                    self.b[i].value[3]*(x.pow(3) as f64)) 
                                                                     as f64, 1) as i32)
             }
         }
         for x in 1i32..4 {
             for i in 0..6 {
-                println!("C[{}]({})={}", i, x, math::round::ceil(  (self.c[i].value[0]*(x.pow(0) as f32) + 
-                                                                    self.c[i].value[1]*(x.pow(1) as f32) + 
-                                                                    self.c[i].value[2]*(x.pow(2) as f32) + 
-                                                                    self.c[i].value[3]*(x.pow(3) as f32)) 
+                println!("C[{}]({})={}", i, x, math::round::ceil(  (self.c[i].value[0]*(x.pow(0) as f64) + 
+                                                                    self.c[i].value[1]*(x.pow(1) as f64) + 
+                                                                    self.c[i].value[2]*(x.pow(2) as f64) + 
+                                                                    self.c[i].value[3]*(x.pow(3) as f64)) 
                                                                     as f64, 1) as i32)
             }
         }
@@ -69,15 +69,15 @@ impl R1CS<std::vec::Vec<Polynomial>> for QAP {
     }
 }
 
-// we're using a wrapper aroudn std::vec::Vec<f32> so we can implement an ops::Add function for the
+// we're using a wrapper aroudn std::vec::Vec<f64> so we can implement an ops::Add function for the
 // Polynomial
 #[derive(Clone)]
 pub struct Polynomial {
-    pub value: std::vec::Vec<f32>,
+    pub value: std::vec::Vec<f64>,
 }
 
-impl From<std::vec::Vec<f32>> for Polynomial {
-    fn from(item: std::vec::Vec<f32>) -> Self {
+impl From<std::vec::Vec<f64>> for Polynomial {
+    fn from(item: std::vec::Vec<f64>) -> Self {
         Polynomial { value: item }
     }
 }
@@ -127,7 +127,7 @@ impl ops::Mul for Polynomial {
 }
 
 impl ops::Index<usize> for Polynomial {
-    type Output = f32;
+    type Output = f64;
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.value[index]
