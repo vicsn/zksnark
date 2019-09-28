@@ -107,9 +107,22 @@ impl ops::Index<usize> for Polynomial {
     }
 }
 
+// impl std::iter::FromIterator<Polynomial> for Polynomial {
+//     fn from_iter<I: IntoIterator<Item=Polynomial>>(iter: I) -> Self {
+//         let mut c = MyCollection::new();
+
+//         for i in iter {
+//             c.add(i);
+//         }
+
+//         c
+//     }
+// }
+
+
 pub fn sum_polynomials(polynomials: std::vec::Vec<Polynomial>) -> Polynomial {
     let mut sum = Polynomial {
-        value: vec![1.0; polynomials[0].value.len()],
+        value: vec![0.0; polynomials[0].value.len()],
     };
 
     for i in 0..sum.value.len() {
@@ -119,6 +132,54 @@ pub fn sum_polynomials(polynomials: std::vec::Vec<Polynomial>) -> Polynomial {
     sum
 }
 
-// pub fn sum_polynomials(polynomials: std::vec::Vec<Polynomial>) -> Polynomial {
-//         polynomials.iter().sum()
-// }
+    // {
+    //     iter.fold(Self { x: 0.0, y: 0.0 }, |a, b| Self {
+    //         x: a.x + b.x,
+    //         y: a.y + b.y,
+    //     })
+    // }
+impl<'a> std::iter::Sum for Polynomial {
+    fn sum<I>(iter: I) -> Self
+    where
+        I: Iterator<Item = Self>
+    {
+        iter.fold(Self { value: vec![0.0; 4] }, |a, b| a + b)
+        // let mut sum = Polynomial {
+        //     // TODO: hardcoded 4 can be replaced by using std::iter::ExactSizeIterator and iter().len()
+        //     value: vec![0.0; 4],
+        // };
+
+        // while iter.next().is_some() {
+        //     sum = sum + iter;
+            // for i in 0..4 {
+            //     sum.value[i] += iter.collect::<Polynomial>()[i];
+            // }
+        // }
+        // sum
+
+        // for index in iter {
+        //     // 0..sum.value.len() {
+        //     for j in 0..polynomial[i][j].len() {
+        //         sum.value[i] += index.unwrap();
+        //         // ter.map(|polynomial| polynomial.value[i]).sum::<f32>();
+        //         // sum.value[i] += iter.map(|polynomial| polynomial.value[i]).sum::<f32>();
+        //     }
+        // }
+
+        // sum
+        
+        // iter.fold(Polynomial { value: vec![0.0, 4] }, |a, b| 
+        //     for i in 0..a.len() {
+        //         a.value[i] += b.value[i];
+        //     },
+        //     // let summy = Polynomial {
+        //     //     // TODO: hardcoded 4 can be replaced by using std::iter::ExactSizeIterator and iter().len()
+        //     //     value: a.value,
+        //     // };
+        //     summy
+        //     // Polynomial {
+        //     //     value: a.value,
+        //     // }
+        // )
+    }
+}
