@@ -82,20 +82,47 @@ impl From<std::vec::Vec<f32>> for Polynomial {
     }
 }
 
-// Add<Polynomial>
 // TODO: check if this is using references correctly
-// TODO: this may not be used at the moment
+// TODO: this only works if both polynomials are of the same length
 impl ops::Add for Polynomial {
-    // type Output = Polynomial;
     type Output = Self;
 
-    // fn add(self, _rhs: Polynomial) -> Polynomial {
-    fn add(self, _rhs: Self) -> Self {
-        let mut sum = Polynomial { value: vec![0.0; _rhs.value.len()] };
-        for ((sumref, lval), rval) in sum.value.iter_mut().zip(&self.value).zip(&_rhs.value) {
+    fn add(self, rhs: Self) -> Self {
+        assert!(self.value.len() == rhs.value.len());
+        let mut sum = Polynomial { value: vec![0.0; rhs.value.len()] };
+        for ((sumref, lval), rval) in sum.value.iter_mut().zip(&self.value).zip(&rhs.value) {
             *sumref = lval + rval;
         }
         sum
+    }
+}
+
+// TODO: this only works if self.len() >= rhs.len()
+impl ops::Sub for Polynomial {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self {
+        assert!(self.value.len() >= rhs.value.len());
+        let mut subtraction = self.clone();
+        for (i, rval) in rhs.value.iter().rev().enumerate() {
+            subtraction.value[self.value.len() - 1 - i] -= rval;
+        }
+        subtraction
+    }
+}
+
+impl ops::Mul for Polynomial {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self {
+        let max_power = rhs.value.len() + self.value.len() - 2;
+        let mut multiplication = Polynomial { value: vec![0.0; max_power + 1] };
+        for (i, lval) in self.value.iter().enumerate() {
+            for (j, rval) in rhs.value.iter().enumerate() {
+                multiplication.value[max_power - i - j] += lval*rval;
+            }
+        }
+        multiplication
     }
 }
 

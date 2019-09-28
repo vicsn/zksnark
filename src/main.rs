@@ -16,6 +16,7 @@ mod qap;
 use crate::gates::*;
 use crate::qap::*;
 use crate::r1cs::*;
+use crate::xxcalc::*;
 #[macro_use] extern crate itertools;
 
 /// Evaluate x**3 + x + 5
@@ -234,14 +235,23 @@ fn validate_constraints(a: std::vec::Vec<u32>, b: std::vec::Vec<u32>, c: std::ve
 // TODO: ensure this works for both types of R1CS. See the function above
 // fn evaluate_r1cs<U: Iter<U>, T: Clone + R1CS<U>>(vectors: T, s: std::vec::Vec<u32>) -> bool {
 fn evaluate_r1cs(vectors: QAP, s: std::vec::Vec<u32>) -> bool {
-    let r1: Polynomial = s.iter().zip(vectors.a().iter()).map(|(x, y)| Polynomial { value: vec![(*x as f32)*y[0], (*x as f32)*y[1], (*x as f32)*y[2], (*x as f32)*y[3]] }).sum();
-    let r2: Polynomial = s.iter().zip(vectors.b().iter()).map(|(x, y)| Polynomial { value: vec![(*x as f32)*y[0], (*x as f32)*y[1], (*x as f32)*y[2], (*x as f32)*y[3]] }).sum();
-    let r3: Polynomial = s.iter().zip(vectors.c().iter()).map(|(x, y)| Polynomial { value: vec![(*x as f32)*y[0], (*x as f32)*y[1], (*x as f32)*y[2], (*x as f32)*y[3]] }).sum();
+    let r_a: Polynomial = s.iter().zip(vectors.a().iter()).map(|(x, y)| Polynomial { value: vec![(*x as f32)*y[0], (*x as f32)*y[1], (*x as f32)*y[2], (*x as f32)*y[3]] }).sum();
+    let r_b: Polynomial = s.iter().zip(vectors.b().iter()).map(|(x, y)| Polynomial { value: vec![(*x as f32)*y[0], (*x as f32)*y[1], (*x as f32)*y[2], (*x as f32)*y[3]] }).sum();
+    let r_c: Polynomial = s.iter().zip(vectors.c().iter()).map(|(x, y)| Polynomial { value: vec![(*x as f32)*y[0], (*x as f32)*y[1], (*x as f32)*y[2], (*x as f32)*y[3]] }).sum();
+    
+    let t = (r_a*r_b) - r_c;
+    // TODO: this is wrong
+    for i in 0..t.value.len() {
+        print!("{}x{} ", t.value[i], i);
+    }
+    println!("");
+    
+    // Z = (x - 1) * (x - 2) * (x - 3) * (x - 4)
+    // TODO: reverse vector
+    // let z = xxcalc::polynomial::Polynomial::new(&[24, -50, 35, -10, 1]);
+    // let t_new = xxcalc::polynomial::Polynomial::new(t.calc);
+    // h = t / Z
 
-    // r1 * r2 - r3 == t / Z
-    // A . s = [43.0, -73.333, 38.5, -5.166]
-    // B . s = [-3.0, 10.333, -5.0, 0.666]
-    // C . s = [-41.0, 71.666, -24.5, 2.833]
     true
 }
 
