@@ -84,6 +84,7 @@ impl From<std::vec::Vec<f32>> for Polynomial {
 
 // Add<Polynomial>
 // TODO: check if this is using references correctly
+// TODO: this may not be used at the moment
 impl ops::Add for Polynomial {
     // type Output = Polynomial;
     type Output = Self;
@@ -97,3 +98,29 @@ impl ops::Add for Polynomial {
         sum
     }
 }
+
+impl ops::Index<usize> for Polynomial {
+    type Output = f32;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.value[index]
+    }
+}
+
+pub fn sum_polynomials(polynomials: std::vec::Vec<Polynomial>) -> Polynomial {
+    let mut sum = Polynomial {
+        value: vec![1.0; polynomials[0].value.len()],
+    };
+
+    for i in 0..sum.value.len() {
+        for j in 0..polynomials.len() {
+            sum.value[i] += polynomials[j].value[i];
+        }
+    }
+
+    sum
+}
+
+// pub fn sum_polynomials(polynomials: std::vec::Vec<Polynomial>) -> Polynomial {
+//         polynomials.iter().sum()
+// }

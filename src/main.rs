@@ -232,11 +232,17 @@ fn validate_constraints(a: std::vec::Vec<u32>, b: std::vec::Vec<u32>, c: std::ve
 // first argument 2: qap: QAP
 // TODO: we may not need to require the Clone trait
 // TODO: ensure this works for both types of R1CS. See the function above
-fn evaluate_r1cs<U, T: Clone + R1CS<U>>(vectors: T, s: std::vec::Vec<u32>) -> bool {
-    let r1: std::vec::Vec<f32> = s.iter().zip(vectors.a().iter()).map(|(x, y)| vec![x*y[0], x*y[1], x*y[2], x*y[3]]).sum();
-    let r2: std::vec::Vec<f32> = s.iter().zip(vectors.b().iter()).map(|(x, y)| vec![x*y[0], x*y[1], x*y[2], x*y[3]]).sum();
-    let r3: std::vec::Vec<f32> = s.iter().zip(vectors.c().iter()).map(|(x, y)| vec![x*y[0], x*y[1], x*y[2], x*y[3]]).sum();
+// fn evaluate_r1cs<U: Iter<U>, T: Clone + R1CS<U>>(vectors: T, s: std::vec::Vec<u32>) -> bool {
+fn evaluate_r1cs(vectors: QAP, s: std::vec::Vec<u32>) -> bool {
+    let r1 = s.iter().zip(vectors.a().iter()).map(|(x, y)| vec![(*x as f32)*y[0], (*x as f32)*y[1], (*x as f32)*y[2], (*x as f32)*y[3]]).collect::<Vec<_>>();//sum();
+    let mut res: std::vec::Vec<Polynomial> = vec![];
+    for i in 0..r1.len() {
+        res.push(Polynomial { value: r1[i].clone() });
+    }
+    let sum = sum_polynomials(res);
    
+    // let r2: std::vec::Vec<f32> = s.iter().zip(vectors.b().iter()).map(|(x, y)| vec![(x as f32)*y[0], x*y[1], x*y[2], x*y[3]]).sum();
+    // let r3: std::vec::Vec<f32> = s.iter().zip(vectors.c().iter()).map(|(x, y)| vec![(x as f32)*y[0], x*y[1], x*y[2], x*y[3]]).sum();
     // let v1 = qap.a[0].clone();
     // let v2 = qap.a[0].clone();
     // let v3 = v1 + v2;
