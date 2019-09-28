@@ -119,7 +119,7 @@ pub fn sum_polynomials(polynomials: std::vec::Vec<Polynomial>) -> Polynomial {
     sum
 }
 
-impl<'a> std::iter::Sum for Polynomial {
+impl std::iter::Sum for Polynomial {
     fn sum<I>(iter: I) -> Self
     where
         I: Iterator<Item = Self>
