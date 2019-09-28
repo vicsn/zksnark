@@ -113,9 +113,7 @@ pub fn sum_polynomials(polynomials: std::vec::Vec<Polynomial>) -> Polynomial {
     };
 
     for i in 0..sum.value.len() {
-        for j in 0..polynomials.len() {
-            sum.value[i] += polynomials[j].value[i];
-        }
+        sum.value[i] += polynomials.iter().map(|polynomial| polynomial.value[i]).sum::<f32>();
     }
 
     sum
