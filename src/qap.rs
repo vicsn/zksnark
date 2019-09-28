@@ -107,18 +107,6 @@ impl ops::Index<usize> for Polynomial {
     }
 }
 
-pub fn sum_polynomials(polynomials: std::vec::Vec<Polynomial>) -> Polynomial {
-    let mut sum = Polynomial {
-        value: vec![0.0; polynomials[0].value.len()],
-    };
-
-    for i in 0..sum.value.len() {
-        sum.value[i] += polynomials.iter().map(|polynomial| polynomial.value[i]).sum::<f32>();
-    }
-
-    sum
-}
-
 impl std::iter::Sum for Polynomial {
     fn sum<I>(iter: I) -> Self
     where

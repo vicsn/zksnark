@@ -211,8 +211,8 @@ fn r1cs_to_qap(flattened: FlattenedEquation) -> QAP {
     let c = flattened.c();
     for i in 0..6 {
         qap.add_a(interpolate(vec![(1, a[0][i]), (2, a[1][i]), (3, a[2][i]), (4, a[3][i])]));
-        // qap.add_b(interpolate(vec![(1, b[0][i]), (2, b[1][i]), (3, b[2][i]), (4, b[3][i])]));
-        // qap.add_c(interpolate(vec![(1, c[0][i]), (2, c[1][i]), (3, c[2][i]), (4, c[3][i])]));
+        qap.add_b(interpolate(vec![(1, b[0][i]), (2, b[1][i]), (3, b[2][i]), (4, b[3][i])]));
+        qap.add_c(interpolate(vec![(1, c[0][i]), (2, c[1][i]), (3, c[2][i]), (4, c[3][i])]));
     }
 
     qap
@@ -234,28 +234,9 @@ fn validate_constraints(a: std::vec::Vec<u32>, b: std::vec::Vec<u32>, c: std::ve
 // TODO: ensure this works for both types of R1CS. See the function above
 // fn evaluate_r1cs<U: Iter<U>, T: Clone + R1CS<U>>(vectors: T, s: std::vec::Vec<u32>) -> bool {
 fn evaluate_r1cs(vectors: QAP, s: std::vec::Vec<u32>) -> bool {
-    // TODO given that we adjusted the order of the QAP vectors, the s vector has to be reordered
     let r1: Polynomial = s.iter().zip(vectors.a().iter()).map(|(x, y)| Polynomial { value: vec![(*x as f32)*y[0], (*x as f32)*y[1], (*x as f32)*y[2], (*x as f32)*y[3]] }).sum();
-    // let r2: Polynomial = s.iter().zip(vectors.b().iter()).map(|(x, y)| Polynomial { value: vec![(*x as f32)*y[0], (*x as f32)*y[1], (*x as f32)*y[2], (*x as f32)*y[3]] }).sum();
-    // let r3: Polynomial = s.iter().zip(vectors.c().iter()).map(|(x, y)| Polynomial { value: vec![(*x as f32)*y[0], (*x as f32)*y[1], (*x as f32)*y[2], (*x as f32)*y[3]] }).sum();
-
-    println!("---------------------------------sums");
-    for i in 0..r1.value.len() {
-        println!("{}*{} + \t\t{}*{} + \t\t{}*{} + \t\t{}*{} + \t\t{}*{} + \t\t{}*{} = \t{}", 
-            s[0],
-            vectors.a()[0].value[i],  
-            s[1],
-            vectors.a()[1].value[i],  
-            s[2],
-            vectors.a()[2].value[i],  
-            s[3],
-            vectors.a()[3].value[i],  
-            s[4],
-            vectors.a()[4].value[i],  
-            s[5],
-            vectors.a()[5].value[i],  
-            r1.value[i]);
-    }
+    let r2: Polynomial = s.iter().zip(vectors.b().iter()).map(|(x, y)| Polynomial { value: vec![(*x as f32)*y[0], (*x as f32)*y[1], (*x as f32)*y[2], (*x as f32)*y[3]] }).sum();
+    let r3: Polynomial = s.iter().zip(vectors.c().iter()).map(|(x, y)| Polynomial { value: vec![(*x as f32)*y[0], (*x as f32)*y[1], (*x as f32)*y[2], (*x as f32)*y[3]] }).sum();
 
     // r1 * r2 - r3 == t / Z
     // A . s = [43.0, -73.333, 38.5, -5.166]
