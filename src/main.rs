@@ -245,18 +245,27 @@ fn evaluate_r1cs(vectors: QAP, s: std::vec::Vec<u32>) -> bool {
 
     // TODO: calculation is wrong at the moment, possibly due to the fact that r_c is substracted
     // from the wrong polynomial elements
+    println!("------------");
+    println!("r_a: {}", r_a);
+    println!("r_b: {}", r_b);
+    println!("r_c: {}", r_c);
+    println!("r_a*r_b: {}", r_a.clone()*r_b.clone());
     let t = (r_a*r_b) - r_c;
-    println!("");
-    for i in 0..t.coef.len() {
-        print!("{}x{} ", t.coef[i], i);
-    }
-    println!("");
+    println!("t: {}", t);
+    // println!("");
+    // for i in 0..t.coef.len() {
+    //     print!("{}x{} ", t.coef[i], i);
+    // }
+    // println!("");
     
     // Z = (x - 1) * (x - 2) * (x - 3) * (x - 4)
     let Z = peroxide::poly(peroxide::c!(24, -50, 35, -10, 1));
     
     // h = t / Z
     let h = t / Z;
+
+    println!("h.0: {}", h.0);
+    println!("h.1: {}", h.1);
 
     // TODO: evaluate if there is a remainder
     true
