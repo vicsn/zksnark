@@ -13,9 +13,11 @@
 mod gates;
 mod r1cs;
 mod qap;
+mod util;
 use crate::gates::*;
 use crate::qap::*;
 use crate::r1cs::*;
+use crate::util::*;
 extern crate peroxide;
 #[macro_use] extern crate itertools;
 
@@ -239,36 +241,20 @@ fn evaluate_r1cs(vectors: QAP, s: std::vec::Vec<u32>) -> bool {
     let r_b: Polynomial = s.iter().zip(vectors.b().iter()).map(|(x, y)| Polynomial { value: vec![(*x as f64)*y[0], (*x as f64)*y[1], (*x as f64)*y[2], (*x as f64)*y[3]] }).sum();
     let r_c: Polynomial = s.iter().zip(vectors.c().iter()).map(|(x, y)| Polynomial { value: vec![(*x as f64)*y[0], (*x as f64)*y[1], (*x as f64)*y[2], (*x as f64)*y[3]] }).sum();
     
-    let r_a = peroxide::poly(r_a.value);
-    let r_b = peroxide::poly(r_b.value);
-    let r_c = peroxide::poly(r_c.value);
+    let r_a = reverse_poly(peroxide::poly(r_a.value));
+    let r_b = reverse_poly(peroxide::poly(r_b.value));
+    let r_c = reverse_poly(peroxide::poly(r_c.value));
+    let t = reverse_poly((r_a*r_b) - r_c);
 
-    // TODO: calculation is wrong at the moment, possibly due to the fact that r_c is substracted
-    // from the wrong polynomial elements
-    println!("------------");
-    println!("r_a: {}", r_a);
-    println!("r_b: {}", r_b);
-    println!("r_c: {}", r_c);
-    println!("r_a*r_b: {}", r_a.clone()*r_b.clone());
-    let t = (r_a*r_b) - r_c;
-    println!("t: {}", t);
-    // println!("");
-    // for i in 0..t.coef.len() {
-    //     print!("{}x{} ", t.coef[i], i);
-    // }
-    // println!("");
-    
     // Z = (x - 1) * (x - 2) * (x - 3) * (x - 4)
     let Z = peroxide::poly(peroxide::c!(24, -50, 35, -10, 1));
     
     // h = t / Z
     let h = t / Z;
 
-    println!("h.0: {}", h.0);
-    println!("h.1: {}", h.1);
-
-    // TODO: evaluate if there is a remainder
-    true
+    // evaluate whether the remainder equals 0.
+    // TODO investigate how to let the remainder equal exactly to 0 without rounding errors
+    h.1.eval(1) < 0.00000
 }
 
 fn main() {
